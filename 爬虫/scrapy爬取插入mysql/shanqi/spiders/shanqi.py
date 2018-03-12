@@ -1,0 +1,22 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+import scrapy
+from shanqi.items import ShanqiItem
+
+class YouwenSpider(scrapy.Spider):
+    name = 'shanqi'
+    start_urls = ['http://www.120ask.com/list/xexxwk/all/%s' % p for p in range(0, 200)]
+    def parse(self,response):
+        for href in response.xpath('//*[@id="list"]/div/div/ul/li/div/p/a/@href'):
+            full_url = response.urljoin(href.extract())
+            yield scrapy.Request(full_url, callback=self.parse_question)
+    def parse_question(self,response):
+        print(response.xpath('//*[@id="body_main"]/div/div/div/div/div/span/text()').extract_first())
+        print(response.xpath('//div[@class="b_askbox"]/div/h1/text()').extract_first())
+        print(response.xpath('//*[@class="crazy_new"]/p/text()').extract())
+        item = ShanqiItem()
+        item['nianling'] = ((response.xpath('//*[@id="body_main"]/div/div/div/div/div/span/text()').extract_first())).split(' ')[2]
+        item['xingbie'] = ((response.xpath('//*[@id="body_main"]/div/div/div/div/div/span/text()').extract_first())).split(' ')[0]
+        item['title'] = response.xpath('//div[@class="b_askbox"]/div/h1/text()').extract_first
+        item['zhenduan'] = response.xpath('//*[@class="crazy_new"]/p/text()').extract()
+        yield item
